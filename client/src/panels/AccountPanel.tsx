@@ -107,7 +107,7 @@ export function AccountPanel({
   const canRebirth = currentXp >= REBIRTH_XP_REQUIRED
 
   if (view === 'admin' || loggedIn?.isAdmin) {
-    return <AdminPanel onClose={onClose} />
+    return <AdminPanel onClose={onClose} onLogout={() => { onLogout(); onClose() }} />
   }
 
   return (

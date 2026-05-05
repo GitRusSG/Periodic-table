@@ -17,7 +17,7 @@ export function isAdminCredentials(username: string, password: string): boolean 
   return username.toLowerCase() === ADMIN_USERNAME && String(h) === ADMIN_PASSWORD_HASH
 }
 
-export function AdminPanel({ onClose }: { onClose: () => void }) {
+export function AdminPanel({ onClose, onLogout }: { onClose: () => void; onLogout: () => void }) {
   const [view, setView] = useState<'dashboard' | 'players' | 'award' | 'difficulty'>('dashboard')
   const [players, setPlayers] = useState<DBPlayer[]>([])
   const [loading, setLoading] = useState(true)
@@ -89,6 +89,9 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
         <span style={{ fontSize: '0.7rem', color: '#888', marginLeft: 8 }}>mendeleev · Supabase</span>
       </div>
       <hr className="panel-hr" />
+      <button className="battle-btn flee" style={{ marginBottom: 10 }} onClick={() => { onLogout(); onClose() }}>
+        🚪 Log Out
+      </button>
 
       <div className="forge-tabs" style={{ marginBottom: 10 }}>
         {(['dashboard','players','award','difficulty'] as const).map(v => (

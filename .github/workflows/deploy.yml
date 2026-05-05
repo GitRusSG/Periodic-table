@@ -22,7 +22,7 @@ jobs:
         working-directory: client
 
       - name: Build
-        run: npm run build
+        run: npx vite build
         working-directory: client
 
       - name: Deploy to GitHub Pages

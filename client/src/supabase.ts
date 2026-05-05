@@ -113,6 +113,15 @@ export async function dbSendGift(recipient: string, item: unknown): Promise<void
   await supabase.from('gifts').insert({ recipient: recipient.toLowerCase(), item, claimed: false })
 }
 
+export async function dbGetPlayer(username: string): Promise<DBPlayer | null> {
+  const { data } = await supabase
+    .from('players')
+    .select('*')
+    .eq('username', username.toLowerCase())
+    .single()
+  return data as DBPlayer | null
+}
+
 export async function dbClaimGifts(username: string): Promise<unknown[]> {
   const { data } = await supabase
     .from('gifts')
@@ -134,4 +143,69 @@ export async function dbGetDifficulty(): Promise<number> {
 
 export async function dbSetDifficulty(mult: number): Promise<void> {
   await supabase.from('global_settings').update({ value: String(mult) }).eq('key', 'difficulty_mult')
+}
+
+// ─── Trading Hall ─────────────────────────────────────────────────────────────
+
+export interface TradeListing {
+  id: string
+  seller: string
+  item: unknown
+  price: number
+  active: boolean
+  created_at: string
+}
+
+export async function dbGetListings(): Promise<TradeListing[]> {
+  const { data } = await supabase
+    .from('trade_listings')
+    .select('*')
+    .eq('active', true)
+    .order('created_at', { ascending: false })
+    .limit(50)
+  return (data ?? []) as TradeListing[]
+}
+
+export async function dbPostListing(seller: string, item: unknown, price: number): Promise<void> {
+  await supabase.from('trade_listings').insert({ seller, item, price, active: true })
+}
+
+export async function dbCancelListing(id: string): Promise<void> {
+  await supabase.from('trade_listings').update({ active: false }).eq('id', id)
+}
+
+export async function dbBuyListing(id: string): Promise<TradeListing | null> {
+  const { data } = await supabase
+    .from('trade_listings')
+    .select('*')
+    .eq('id', id)
+    .eq('active', true)
+    .single()
+  if (!data) return null
+  await supabase.from('trade_listings').update({ active: false }).eq('id', id)
+  return data as TradeListing
+}
+
+// ─── Flex Hall ────────────────────────────────────────────────────────────────
+
+export interface FlexProfile {
+  username: string
+  flex_items: unknown[]
+  total_power: number
+  updated_at: string
+}
+
+export async function dbGetFlexProfiles(): Promise<FlexProfile[]> {
+  const { data } = await supabase
+    .from('flex_profiles')
+    .select('*')
+    .order('total_power', { ascending: false })
+    .limit(20)
+  return (data ?? []) as FlexProfile[]
+}
+
+export async function dbUpsertFlex(username: string, flexItems: unknown[], totalPower: number): Promise<void> {
+  await supabase.from('flex_profiles').upsert({
+    username, flex_items: flexItems, total_power: totalPower, updated_at: new Date().toISOString(),
+  })
 }

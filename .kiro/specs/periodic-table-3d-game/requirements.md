@@ -257,3 +257,45 @@ A 3D interactive periodic table educational game set in a floating space environ
 2. WHEN a user discovers an easter egg, THE Application SHALL display a special message and award bonus gold.
 3. Discovered easter eggs SHALL be tracked and displayed in a secret collection.
 4. Easter eggs SHALL include references to real chemistry history and pop culture.
+
+---
+
+## Requirement 16: Gift Inbox
+
+**User Story:** As a user, I want to check if I have received any gifts from the admin, so I know when new items arrive.
+
+#### Acceptance Criteria
+
+1. THE Application SHALL provide a "Check Gifts" button in the Account panel.
+2. WHEN a user clicks Check Gifts, THE Application SHALL query the database for unclaimed gifts and add them to inventory.
+3. THE Application SHALL display a notification badge when unclaimed gifts are available.
+4. Gifts SHALL be marked as claimed after being collected.
+
+---
+
+## Requirement 17: Trading Hall
+
+**User Story:** As a user, I want to post items for trade and buy items from other players, so that the game has a player-driven economy.
+
+#### Acceptance Criteria
+
+1. THE Application SHALL provide a Trading Hall tab where users can post items for sale.
+2. WHEN a user posts an item, THE Application SHALL store the listing in the database with an asking price in gold.
+3. WHEN another user purchases a listed item, THE Application SHALL transfer the item and deduct gold from the buyer.
+4. THE Application SHALL display all active listings with seller name, item details, and price.
+5. Users SHALL be able to cancel their own listings.
+
+---
+
+## Requirement 18: Flex Hall and Player vs Player
+
+**User Story:** As a user, I want to show off my best items and challenge other players to battles, so that the game has a competitive social dimension.
+
+#### Acceptance Criteria
+
+1. THE Application SHALL provide a Flex Hall where users can display their top 3 equipped items.
+2. THE Flex Hall SHALL show all players' flex profiles sorted by total stat power.
+3. THE Application SHALL allow users to challenge another player to a simulated PvP battle.
+4. PvP battles SHALL be resolved deterministically using both players' equipped stats.
+5. THE winner SHALL receive XP and gold; the loser SHALL lose nothing.
+6. PvP results SHALL be displayed with a turn-by-turn battle log.

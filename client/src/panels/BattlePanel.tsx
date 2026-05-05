@@ -22,11 +22,12 @@ function LightningFlash({ active }: { active: boolean }) {
   )
 }
 
-export function BattlePanel({ el, onClose, onXP, onGold, onLoot, onNameTag, equipped, atkBuff, rebirths }: {
+export function BattlePanel({ el, onClose, onXP, onGold, onLoot, onNameTag, onHpChange, equipped, atkBuff, rebirths }: {
   el: ElementRecord; onClose: () => void
   onXP: (n: number) => void; onGold: (n: number) => void
   onLoot: (item: LootItem) => void
   onNameTag: (symbol: string, name: string) => void
+  onHpChange: (newHp: number) => void
   equipped: LootItem[]; atkBuff: number; rebirths: number
 }) {
   const isBoss = el.zone === 'Boss' || el.zone === 'Anomalous'
@@ -96,6 +97,7 @@ export function BattlePanel({ el, onClose, onXP, onGold, onLoot, onNameTag, equi
       onXP(xpGain)
       onGold(goldGain)
       onNameTag(el.symbol, el.name)
+      onHpChange(result.playerHp) // persist remaining HP — no auto-heal
       const rarity = rollRarity(el.zone)
       const loot = generateLoot(
         el.symbol, el.name, rarity, el.classification,
@@ -105,6 +107,10 @@ export function BattlePanel({ el, onClose, onXP, onGold, onLoot, onNameTag, equi
       onLoot(loot)
       setPhase('won')
     } else if (result.playerHp <= 0) {
+      // Lose gold on defeat — 10% of current gold, min 5
+      const goldLoss = Math.max(5, Math.round(player.atk * 2))
+      onGold(-goldLoss)
+      onHpChange(1) // survive with 1 HP
       setPhase('lost')
     }
   }

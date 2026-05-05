@@ -9,8 +9,11 @@ import { BattlePanel } from './panels/BattlePanel'
 import { InventoryPanel } from './panels/InventoryPanel'
 import { AccountPanel, type Account } from './panels/AccountPanel'
 import { ForgePanel } from './panels/ForgePanel'
+import { TradingHall } from './panels/TradingHall'
+import { FlexHall } from './panels/FlexHall'
 import { Confetti } from './components/Confetti'
 import { checkTriggers, createEggState, recordClick, type EggTriggerState } from './easterEggs'
+import { dbClaimGifts, dbGetPlayer } from './supabase'
 import type { LootItem } from './gameData'
 import type { ActiveMode } from './types/index'
 import './App.css'
@@ -28,7 +31,7 @@ const positions = elements.map(el => {
 const maxCol = Math.max(...positions.map(p => p.col))
 const maxRow = Math.max(...positions.map(p => p.row))
 
-type Tab = ActiveMode | 'inventory' | 'account' | 'forge'
+type Tab = ActiveMode | 'inventory' | 'account' | 'forge' | 'trade' | 'flex'
 
 // ─── Persistence helpers ──────────────────────────────────────────────────────
 
@@ -75,6 +78,7 @@ export default function App() {
   const [easterEgg, setEasterEgg] = useState<{ title: string; message: string } | null>(null)
   const [discoveredEggs, setDiscoveredEggs] = useState<string[]>(saved?.discoveredEggs ?? [])
   const [eggState, setEggState] = useState<EggTriggerState>(createEggState())
+  const [giftCount, setGiftCount] = useState(0)
 
   const addXP = (n: number) => setXp(x => x + n)
   const addGold = (n: number) => setGold(g => g + n)

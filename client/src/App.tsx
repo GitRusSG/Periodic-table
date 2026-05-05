@@ -10,7 +10,7 @@ import { InventoryPanel } from './panels/InventoryPanel'
 import { AccountPanel, type Account } from './panels/AccountPanel'
 import { ForgePanel } from './panels/ForgePanel'
 import { Confetti } from './components/Confetti'
-import { checkEasterEgg } from './easterEggs'
+import { checkTriggers, createEggState, recordClick, type EggTriggerState } from './easterEggs'
 import type { LootItem } from './gameData'
 import type { ActiveMode } from './types/index'
 import './App.css'
@@ -68,6 +68,7 @@ export default function App() {
   const [showConfetti, setShowConfetti] = useState(false)
   const [easterEgg, setEasterEgg] = useState<{ title: string; message: string } | null>(null)
   const [discoveredEggs, setDiscoveredEggs] = useState<string[]>(saved?.discoveredEggs ?? [])
+  const [eggState, setEggState] = useState<EggTriggerState>(createEggState())
 
   const addXP = (n: number) => setXp(x => x + n)
   const addGold = (n: number) => setGold(g => g + n)
@@ -83,9 +84,26 @@ export default function App() {
     setNameTags(prev => prev.some(t => t.symbol === symbol) ? prev : [...prev, { symbol, name }])
   }
 
+  // Claim any pending admin gift items on login
+  const claimGifts = (username: string) => {
+    const key = `pt3d_gift_${username}`
+    const gifts: LootItem[] = JSON.parse(localStorage.getItem(key) ?? '[]')
+    if (gifts.length > 0) {
+      setInventory(inv => [...inv, ...gifts])
+      localStorage.removeItem(key)
+    }
+  }
+
   const handleRebirth = () => {
     if (xp < 5000) return
+    // Reset everything except rebirths count
     setXp(0)
+    setGold(50)
+    setInventory([])
+    setAtkBuff(0)
+    setPlayerHp(100)
+    setNameTags([])
+    setDiscoveredEggs([])
     setRebirths(r => r + 1)
   }
 
@@ -141,14 +159,17 @@ export default function App() {
     setShowConfetti(true)
   }
 
-  // Easter egg check on element click
+  // Easter egg check on element click — uses sequence tracker, no visible hints
   const handleElementClick = (el: ElementRecord) => {
     setSelected(prev => prev?.atomicNumber === el.atomicNumber ? null : el)
-    const egg = checkEasterEgg(el.symbol)
-    if (egg && !discoveredEggs.includes(egg.id)) {
-      setDiscoveredEggs(prev => [...prev, egg.id])
-      setEasterEgg({ title: egg.title, message: egg.message })
-      addGold(egg.goldReward)
+    const newEggState = recordClick(eggState, el.symbol)
+    setEggState(newEggState)
+    const triggered = checkTriggers(newEggState, discoveredEggs)
+    if (triggered) {
+      setDiscoveredEggs(prev => [...prev, triggered.id])
+      setEasterEgg({ title: triggered.title, message: triggered.message })
+      addGold(triggered.goldReward)
+      addXP(triggered.xpReward)
     }
   }
 
@@ -245,7 +266,7 @@ export default function App() {
           <AccountPanel
             currentXp={xp} currentGold={gold} currentRebirths={rebirths}
             loggedIn={account}
-            onLogin={acc => setAccount(acc)}
+            onLogin={acc => { setAccount(acc); claimGifts(acc.username) }}
             onLogout={() => setAccount(null)}
             onRebirth={handleRebirth}
             onClose={() => setTab('classic')} />

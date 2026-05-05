@@ -386,3 +386,28 @@ html, body, #root { width: 100%; height: 100%; }
   display: inline-block; margin-left: 6px; font-size: 0.62rem;
   color: #ffd54f; font-weight: 700;
 }
+
+/* Admin panel */
+.admin-panel { border-color: rgba(255,112,67,0.4) !important; }
+.admin-stat-row {
+  display: flex; justify-content: space-between;
+  font-size: 0.82rem; padding: 5px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  color: #bbb;
+}
+.admin-stat-row span:last-child { color: #e0e0e0; font-weight: 600; }
+.admin-player-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 0; font-size: 0.78rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.admin-player-name { color: #90caf9; }
+.admin-player-name.banned { color: #ef5350; text-decoration: line-through; }
+.admin-player-stats { color: #666; font-size: 0.72rem; }
+
+/* Gift notice */
+.gift-notice {
+  background: rgba(255,213,79,0.1); border: 1px solid rgba(255,213,79,0.3);
+  border-radius: 6px; padding: 8px 10px; font-size: 0.8rem;
+  color: #ffd54f; margin-bottom: 10px;
+}

@@ -6,6 +6,7 @@ import {
   type LootItem, type Combatant,
 } from '../gameData'
 import { ZONE_COLORS, RARITY_COLORS } from '../types/game'
+import { loadGlobalDifficulty } from './AdminPanel'
 import type { ElementRecord } from '../types/game'
 
 // Lightning flash component for boss fights
@@ -41,11 +42,13 @@ export function BattlePanel({ el, onClose, onXP, onGold, onLoot, onNameTag, equi
     const rebirthBonus = Math.round(p.atk * rebirths * 0.2)
     return { ...p, atk: p.atk + atkBuff + rebirthBonus }
   })
-  // Enemy scales with rebirths — harder each time
+  // Enemy scales with rebirths AND global admin difficulty multiplier
   const [enemy, setEnemy] = useState<Combatant>(() => {
     const e = buildEnemy(el)
-    const scale = 1 + rebirths * 0.35
-    return { ...e, hp: Math.round(e.hp * scale), maxHp: Math.round(e.hp * scale), atk: Math.round(e.atk * scale), def: Math.round(e.def * scale) }
+    const rebirthScale = 1 + rebirths * 0.35
+    const adminScale = loadGlobalDifficulty()
+    const total = rebirthScale * adminScale
+    return { ...e, hp: Math.round(e.hp * total), maxHp: Math.round(e.hp * total), atk: Math.round(e.atk * total), def: Math.round(e.def * total) }
   })
   const [phase, setPhase] = useState<'start' | 'battle' | 'won' | 'lost'>('start')
   const [log, setLog] = useState<string[]>([])

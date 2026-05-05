@@ -84,16 +84,6 @@ export default function App() {
     setNameTags(prev => prev.some(t => t.symbol === symbol) ? prev : [...prev, { symbol, name }])
   }
 
-  // Claim any pending admin gift items on login
-  const claimGifts = (username: string) => {
-    const key = `pt3d_gift_${username}`
-    const gifts: LootItem[] = JSON.parse(localStorage.getItem(key) ?? '[]')
-    if (gifts.length > 0) {
-      setInventory(inv => [...inv, ...gifts])
-      localStorage.removeItem(key)
-    }
-  }
-
   const handleRebirth = () => {
     if (xp < 5000) return
     // Reset everything except rebirths count
@@ -265,8 +255,13 @@ export default function App() {
         <div className="inv-page">
           <AccountPanel
             currentXp={xp} currentGold={gold} currentRebirths={rebirths}
+            currentInventory={inventory} currentNameTags={nameTags}
+            currentDiscoveredEggs={discoveredEggs} currentAtkBuff={atkBuff}
             loggedIn={account}
-            onLogin={acc => { setAccount(acc); claimGifts(acc.username) }}
+            onLogin={(acc, gifts) => {
+              setAccount(acc)
+              if (gifts.length > 0) setInventory(inv => [...inv, ...gifts])
+            }}
             onLogout={() => setAccount(null)}
             onRebirth={handleRebirth}
             onClose={() => setTab('classic')} />

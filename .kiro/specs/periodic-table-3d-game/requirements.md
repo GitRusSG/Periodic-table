@@ -189,3 +189,71 @@ A 3D interactive periodic table educational game set in a floating space environ
 4. WHEN a user equips a different Name_Tag, THE Combat_Engine SHALL replace the previously active abilities with the abilities of the newly equipped Name_Tag.
 5. THE Progression_Service SHALL persist the user's equipped Name_Tag and full Name_Tag collection to the user's Account so that the state is restored on login.
 6. WHEN a user views the Name_Tag collection, THE Application SHALL display all earned Name_Tags, indicate which is currently equipped, and show the ability description for each.
+
+---
+
+## Requirement 11: Visual Effects
+
+**User Story:** As a user, I want satisfying visual feedback during key moments, so that victories feel rewarding and boss fights feel epic.
+
+#### Acceptance Criteria
+
+1. WHEN a user wins a combat encounter, THE Application SHALL display a full-screen confetti animation.
+2. WHEN a user is in a Boss or Anomalous zone encounter, THE Application SHALL display electric strike visual effects during the battle.
+3. THE confetti animation SHALL use multiple colours and last at least 3 seconds.
+4. THE electric strike effects SHALL flash on the screen during enemy attacks.
+
+---
+
+## Requirement 12: Forge System
+
+**User Story:** As a user, I want to combine reagent items at a Forge to craft new equipment, so that collecting materials has purpose beyond selling.
+
+#### Acceptance Criteria
+
+1. THE Application SHALL provide a Forge interface accessible from the Inventory tab.
+2. WHEN a user selects two or more reagent items and a valid recipe exists, THE Forge SHALL allow crafting a new item.
+3. THE crafted item's rarity SHALL equal the highest rarity among the input reagents.
+4. WHEN a recipe requires a minimum rarity, THE Forge SHALL prevent crafting if no reagent meets that rarity and display a message.
+5. THE Forge SHALL display all available recipes filtered to reagents the user currently holds.
+
+---
+
+## Requirement 13: NPC Vendor
+
+**User Story:** As a user, I want to sell unwanted items to an NPC vendor for gold, so that I can manage my inventory and earn currency.
+
+#### Acceptance Criteria
+
+1. THE Application SHALL provide an NPC Vendor accessible from the Passive zone shop.
+2. WHEN a user selects an item to sell, THE Vendor SHALL offer a gold price based on the item's rarity.
+3. WHEN a user confirms a sale, THE Application SHALL remove the item from inventory and add the gold amount.
+4. THE Vendor SHALL display a sell price before the user confirms.
+5. Rarity sell prices SHALL be: Common 5🪙, Uncommon 15🪙, Rare 40🪙, Epic 100🪙, Legendary 300🪙.
+
+---
+
+## Requirement 14: Trading and Account Sharing
+
+**User Story:** As a user, I want to trade items with other players and share my account profile, so that the game has a social dimension.
+
+#### Acceptance Criteria
+
+1. THE Application SHALL provide a Trade Board where users can post items for trade.
+2. WHEN a user posts an item, THE Application SHALL display it on the Trade Board with the asking price in gold.
+3. WHEN another user purchases a posted item, THE Application SHALL transfer the item and deduct gold from the buyer.
+4. THE Application SHALL provide a shareable profile URL showing a user's stats, name tags, and top inventory items.
+5. THE Trade Board SHALL persist offers in localStorage so they survive page refreshes.
+
+---
+
+## Requirement 15: Easter Eggs
+
+**User Story:** As a user, I want to discover hidden easter eggs, so that exploration feels rewarding and surprising.
+
+#### Acceptance Criteria
+
+1. THE Application SHALL contain at least 5 hidden easter eggs discoverable through specific element interactions.
+2. WHEN a user discovers an easter egg, THE Application SHALL display a special message and award bonus gold.
+3. Discovered easter eggs SHALL be tracked and displayed in a secret collection.
+4. Easter eggs SHALL include references to real chemistry history and pop culture.

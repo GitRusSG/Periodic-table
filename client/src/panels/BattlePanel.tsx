@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   getBossIntro, buildEnemy, buildPlayer, resolveTurn,
   generateLoot, rollRarity,
@@ -8,12 +8,26 @@ import {
 import { ZONE_COLORS, RARITY_COLORS } from '../types/game'
 import type { ElementRecord } from '../types/game'
 
-export function BattlePanel({ el, onClose, onXP, onGold, onLoot, onNameTag, equipped, atkBuff }: {
+// Lightning flash component for boss fights
+function LightningFlash({ active }: { active: boolean }) {
+  if (!active) return null
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, pointerEvents: 'none',
+      background: 'radial-gradient(ellipse at center, rgba(100,180,255,0.35) 0%, transparent 70%)',
+      animation: 'lightning-flash 0.15s ease-out',
+      zIndex: 5,
+      borderRadius: 12,
+    }} />
+  )
+}
+
+export function BattlePanel({ el, onClose, onXP, onGold, onLoot, onNameTag, equipped, atkBuff, rebirths }: {
   el: ElementRecord; onClose: () => void
   onXP: (n: number) => void; onGold: (n: number) => void
   onLoot: (item: LootItem) => void
   onNameTag: (symbol: string, name: string) => void
-  equipped: LootItem[]; atkBuff: number
+  equipped: LootItem[]; atkBuff: number; rebirths: number
 }) {
   const isBoss = el.zone === 'Boss' || el.zone === 'Anomalous'
   const zc = ZONE_COLORS[el.zone] ?? '#fff'
@@ -24,12 +38,19 @@ export function BattlePanel({ el, onClose, onXP, onGold, onLoot, onNameTag, equi
 
   const [player, setPlayer] = useState<Combatant>(() => {
     const p = buildPlayer(equipped)
-    return { ...p, atk: p.atk + atkBuff }
+    const rebirthBonus = Math.round(p.atk * rebirths * 0.2)
+    return { ...p, atk: p.atk + atkBuff + rebirthBonus }
   })
-  const [enemy, setEnemy] = useState<Combatant>(() => buildEnemy(el))
+  // Enemy scales with rebirths — harder each time
+  const [enemy, setEnemy] = useState<Combatant>(() => {
+    const e = buildEnemy(el)
+    const scale = 1 + rebirths * 0.35
+    return { ...e, hp: Math.round(e.hp * scale), maxHp: Math.round(e.hp * scale), atk: Math.round(e.atk * scale), def: Math.round(e.def * scale) }
+  })
   const [phase, setPhase] = useState<'start' | 'battle' | 'won' | 'lost'>('start')
   const [log, setLog] = useState<string[]>([])
   const [droppedLoot, setDroppedLoot] = useState<LootItem | null>(null)
+  const [lightning, setLightning] = useState(false)
 
   const advanceCutscene = () => {
     if (cutsceneLine < bossLines.length - 1) setCutsceneLine(l => l + 1)
@@ -54,6 +75,11 @@ export function BattlePanel({ el, onClose, onXP, onGold, onLoot, onNameTag, equi
       status: result.enemyStatus,
       statusTurns: result.enemyStatusTurns,
     }))
+    // Lightning flash on boss enemy attack
+    if (isBoss && result.playerHp < player.hp) {
+      setLightning(true)
+      setTimeout(() => setLightning(false), 200)
+    }
     if (result.enemyHp <= 0) {
       const xpGain = isBoss ? el.atomicNumber * 3 : el.atomicNumber
       const goldGain = isBoss ? el.atomicNumber * 2 : Math.round(el.atomicNumber / 2)

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import elementsData from './data/elements.json'
 import { computeElementWorldPosition } from './components/PeriodicTableGroup/elementPositions'
 import { CLASS_COLORS, ZONE_COLORS, type ElementRecord } from './types/game'
@@ -8,6 +8,9 @@ import { ShopPanel } from './panels/ShopPanel'
 import { BattlePanel } from './panels/BattlePanel'
 import { InventoryPanel } from './panels/InventoryPanel'
 import { AccountPanel, type Account } from './panels/AccountPanel'
+import { ForgePanel } from './panels/ForgePanel'
+import { Confetti } from './components/Confetti'
+import { checkEasterEgg } from './easterEggs'
 import type { LootItem } from './gameData'
 import type { ActiveMode } from './types/index'
 import './App.css'
@@ -25,7 +28,7 @@ const positions = elements.map(el => {
 const maxCol = Math.max(...positions.map(p => p.col))
 const maxRow = Math.max(...positions.map(p => p.row))
 
-type Tab = ActiveMode | 'inventory' | 'account'
+type Tab = ActiveMode | 'inventory' | 'account' | 'forge'
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('classic')
@@ -39,38 +42,88 @@ export default function App() {
   const [playerHpMax] = useState(100)
   const [nameTags, setNameTags] = useState<{ symbol: string; name: string }[]>([])
   const [account, setAccount] = useState<Account | null>(null)
+  const [rebirths, setRebirths] = useState(0)
+  const [showConfetti, setShowConfetti] = useState(false)
+  const [easterEgg, setEasterEgg] = useState<{ title: string; message: string } | null>(null)
+  const [discoveredEggs, setDiscoveredEggs] = useState<string[]>([])
 
-  const addXP   = (n: number) => setXp(x => x + n)
+  const addXP = (n: number) => setXp(x => x + n)
   const addGold = (n: number) => setGold(g => g + n)
   const spendGold = (n: number) => setGold(g => Math.max(0, g - n))
   const addLoot = (item: LootItem) => setInventory(inv => [...inv, item])
 
   const awardNameTag = (symbol: string, name: string) => {
-    setNameTags(prev => {
-      if (prev.some(t => t.symbol === symbol)) return prev
-      return [...prev, { symbol, name }]
-    })
+    setNameTags(prev => prev.some(t => t.symbol === symbol) ? prev : [...prev, { symbol, name }])
   }
 
-  const toggleEquip = (id: string) => {
+  const handleRebirth = () => {
+    if (xp < 5000) return
+    setXp(0)
+    setRebirths(r => r + 1)
+  }
+
+  const toggleEquip = useCallback((id: string) => {
     setInventory(inv => {
       const target = inv.find(i => i.id === id)
       if (!target) return inv
-      if (target.equipped) {
-        return inv.map(i => i.id === id ? { ...i, equipped: false } : i)
-      }
+      if (target.equipped) return inv.map(i => i.id === id ? { ...i, equipped: false } : i)
       return inv.map(i => {
         if (i.id === id) return { ...i, equipped: true }
         if (i.slot === target.slot && i.equipped) return { ...i, equipped: false }
         return i
       })
     })
+  }, [])
+
+  const equipBest = useCallback(() => {
+    setInventory(inv => {
+      const slots = ['weapon', 'armor', 'accessory'] as const
+      const bestIds = new Set<string>()
+      for (const slot of slots) {
+        const candidates = inv.filter(i => i.slot === slot)
+        if (candidates.length === 0) continue
+        const best = candidates.reduce((a, b) =>
+          (b.atk + b.def + b.spd) > (a.atk + a.def + a.spd) ? b : a
+        )
+        bestIds.add(best.id)
+      }
+      return inv.map(i => ({
+        ...i,
+        equipped: bestIds.has(i.id),
+      }))
+    })
+  }, [])
+
+  const heal = (full: boolean) => setPlayerHp(full ? playerHpMax : Math.round(playerHpMax * 0.5))
+  const applyAtkBuff = () => setAtkBuff(b => b + 5)
+
+  const handleForge = (consumedIds: string[], result: LootItem) => {
+    setInventory(inv => [...inv.filter(i => !consumedIds.includes(i.id)), result])
   }
 
-  const heal = (full: boolean) =>
-    setPlayerHp(full ? playerHpMax : Math.round(playerHpMax * 0.5))
+  const handleSell = (id: string, price: number) => {
+    setInventory(inv => inv.filter(i => i.id !== id))
+    addGold(price)
+  }
 
-  const applyAtkBuff = () => setAtkBuff(b => b + 5)
+  const handleVictory = (xpGain: number, goldGain: number, loot: LootItem, symbol: string, name: string) => {
+    addXP(xpGain)
+    addGold(goldGain)
+    addLoot(loot)
+    awardNameTag(symbol, name)
+    setShowConfetti(true)
+  }
+
+  // Easter egg check on element click
+  const handleElementClick = (el: ElementRecord) => {
+    setSelected(prev => prev?.atomicNumber === el.atomicNumber ? null : el)
+    const egg = checkEasterEgg(el.symbol)
+    if (egg && !discoveredEggs.includes(egg.id)) {
+      setDiscoveredEggs(prev => [...prev, egg.id])
+      setEasterEgg({ title: egg.title, message: egg.message })
+      addGold(egg.goldReward)
+    }
+  }
 
   const equipped = inventory.filter(i => i.equipped)
 
@@ -82,28 +135,37 @@ export default function App() {
     : elements
 
   const getColor = (el: ElementRecord) =>
-    (tab === 'classic' || tab === 'inventory' || tab === 'account')
+    (tab === 'classic' || tab === 'inventory' || tab === 'account' || tab === 'forge')
       ? (CLASS_COLORS[el.classification] ?? '#fff')
       : (ZONE_COLORS[el.zone] ?? '#fff')
 
   const legendEntries =
-    (tab === 'classic' || tab === 'inventory' || tab === 'account')
+    (tab === 'classic' || tab === 'inventory' || tab === 'account' || tab === 'forge')
       ? Object.entries(CLASS_COLORS).map(([k, v]) => [k.replace(/_/g, ' '), v])
       : Object.entries(ZONE_COLORS)
 
-  const mode: ActiveMode = (tab === 'inventory' || tab === 'account') ? 'classic' : tab
-
-  const isFullPage = tab === 'inventory' || tab === 'account'
+  const mode: ActiveMode = (['inventory', 'account', 'forge'] as Tab[]).includes(tab) ? 'classic' : tab as ActiveMode
+  const isFullPage = (['inventory', 'account', 'forge'] as Tab[]).includes(tab)
 
   return (
     <div className="app">
-      {/* ── Header ── */}
+      {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
+
+      {/* Easter egg toast */}
+      {easterEgg && (
+        <div className="easter-egg-toast" onClick={() => setEasterEgg(null)}>
+          <div className="egg-title">{easterEgg.title}</div>
+          <div className="egg-msg">{easterEgg.message}</div>
+          <div className="egg-close">tap to dismiss</div>
+        </div>
+      )}
+
+      {/* Header */}
       <div className="header">
         <span className="logo">⚛ Periodic Table 3D</span>
-        <input className="search" placeholder="Search…" value={search}
-          onChange={e => setSearch(e.target.value)} />
+        <input className="search" placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)} />
         <div className="modes">
-          {(['classic','trivia','game','inventory','account'] as Tab[]).map(t => (
+          {(['classic','trivia','game','inventory','forge','account'] as Tab[]).map(t => (
             <button key={t}
               className={`mode-btn${tab === t ? ' active' : ''}`}
               onClick={() => { setTab(t); setSelected(null) }}>
@@ -111,7 +173,8 @@ export default function App() {
                : t === 'trivia'  ? '🧠 Trivia'
                : t === 'game'    ? '⚔️ Game'
                : t === 'inventory' ? `🎒 Bag (${inventory.length})`
-               : account ? `👤 ${account.username}` : '👤 Account'}
+               : t === 'forge'   ? '⚒️ Forge'
+               : account ? `👤 ${account.username}${rebirths > 0 ? ` 🔥×${rebirths}` : ''}` : '👤 Account'}
             </button>
           ))}
         </div>
@@ -119,39 +182,50 @@ export default function App() {
           <span className="xp-badge">⭐ {xp}</span>
           <span className="gold-badge">🪙 {gold}</span>
           <span className="hp-badge">❤️ {playerHp}/{playerHpMax}</span>
+          {rebirths > 0 && <span className="tag-badge">🔥 ×{rebirths}</span>}
           {nameTags.length > 0 && <span className="tag-badge">🏷 {nameTags.length}</span>}
+          {discoveredEggs.length > 0 && <span className="tag-badge">🥚 {discoveredEggs.length}</span>}
         </div>
       </div>
 
-      {/* ── Mode description ── */}
+      {/* Mode bar */}
       <div className="mode-bar">
-        {tab === 'classic'   && '🔬 Classic — explore elements and their properties.'}
+        {tab === 'classic'   && '🔬 Classic — explore elements. Easter eggs hidden in certain elements!'}
         {tab === 'trivia'    && '🧠 Trivia — answer questions to earn XP and 🪙 gold.'}
-        {tab === 'game'      && '⚔️ Game — battle elements. Noble gases are shops. ⚔️ Attack builds mana · 💥 Special costs 30💧 · 🛡 Defend blocks + builds mana.'}
-        {tab === 'inventory' && '🎒 Inventory — equip items to boost your battle stats.'}
-        {tab === 'account'   && '👤 Account — save progress, log in, view leaderboard.'}
+        {tab === 'game'      && `⚔️ Game — battle elements. Rebirth ×${rebirths} active (+${rebirths * 20}% dmg, enemies ${rebirths * 35}% stronger).`}
+        {tab === 'inventory' && '🎒 Inventory — equip items. Use ⚡ Equip Best to auto-equip your strongest gear.'}
+        {tab === 'forge'     && '⚒️ Forge — combine reagents into equipment. Sell unwanted items to the NPC.'}
+        {tab === 'account'   && '👤 Account — save progress, share with friends, view leaderboard, rebirth.'}
       </div>
 
-      {/* ── Full-page tabs ── */}
+      {/* Full-page tabs */}
       {tab === 'inventory' && (
         <div className="inv-page">
           <InventoryPanel inventory={inventory} gold={gold}
-            onEquip={toggleEquip} onClose={() => setTab('classic')} />
+            onEquip={toggleEquip} onEquipBest={equipBest} onClose={() => setTab('classic')} />
+        </div>
+      )}
+
+      {tab === 'forge' && (
+        <div className="inv-page">
+          <ForgePanel inventory={inventory} gold={gold}
+            onClose={() => setTab('classic')} onForge={handleForge} onSell={handleSell} />
         </div>
       )}
 
       {tab === 'account' && (
         <div className="inv-page">
           <AccountPanel
-            currentXp={xp} currentGold={gold}
+            currentXp={xp} currentGold={gold} currentRebirths={rebirths}
             loggedIn={account}
             onLogin={acc => setAccount(acc)}
             onLogout={() => setAccount(null)}
+            onRebirth={handleRebirth}
             onClose={() => setTab('classic')} />
         </div>
       )}
 
-      {/* ── Periodic table ── */}
+      {/* Periodic table */}
       {!isFullPage && (
         <>
           <div className="table-scroll">
@@ -164,9 +238,10 @@ export default function App() {
                 const color = getColor(el)
                 const isSel = selected?.atomicNumber === el.atomicNumber
                 const isDim = search.trim() !== '' && !filtered.includes(el)
+                const hasEgg = checkEasterEgg(el.symbol) !== null && !discoveredEggs.includes(checkEasterEgg(el.symbol)!.id)
                 return (
                   <button key={el.atomicNumber}
-                    className={`cell${isSel ? ' selected' : ''}${isDim ? ' dimmed' : ''}`}
+                    className={`cell${isSel ? ' selected' : ''}${isDim ? ' dimmed' : ''}${hasEgg && tab === 'classic' ? ' has-egg' : ''}`}
                     style={{
                       left: col * CELL + 4, top: row * CELL + 4,
                       width: CELL - 4, height: CELL - 4,
@@ -174,10 +249,11 @@ export default function App() {
                       background: isSel ? color : `${color}22`,
                       color: isSel ? '#000' : color,
                     }}
-                    onClick={() => setSelected(isSel ? null : el)}
+                    onClick={() => handleElementClick(el)}
                     title={`${el.name} — ${el.classification.replace(/_/g, ' ')}`}>
                     <span className="cell-num">{el.atomicNumber}</span>
                     <span className="cell-sym">{el.symbol}</span>
+                    {hasEgg && tab === 'classic' && <span className="egg-dot">🥚</span>}
                   </button>
                 )
               })}
@@ -193,10 +269,10 @@ export default function App() {
             ))}
           </div>
 
-          {/* Name tag toast */}
+          {/* Name tag strip */}
           {nameTags.length > 0 && (
             <div className="nametag-strip">
-              🏷 Tags: {nameTags.map(t => t.symbol).join(' · ')}
+              🏷 {nameTags.map(t => t.symbol).join(' · ')}
             </div>
           )}
 
@@ -215,9 +291,10 @@ export default function App() {
           )}
           {selected && mode === 'game' && selected.zone !== 'Passive' && (
             <BattlePanel key={selected.atomicNumber} el={selected}
-              onClose={() => setSelected(null)} onXP={addXP} onGold={addGold}
+              onClose={() => setSelected(null)}
+              onXP={addXP} onGold={addGold}
               onLoot={addLoot} onNameTag={awardNameTag}
-              equipped={equipped} atkBuff={atkBuff} />
+              equipped={equipped} atkBuff={atkBuff} rebirths={rebirths} />
           )}
         </>
       )}

@@ -44,7 +44,7 @@ Implement a browser-based single-page application featuring a 3D interactive per
 - [x] 3. Checkpoint — Ensure scene renders at ≥30 fps with all 118 elements visible
   - Ensure all tests pass, ask the user if questions arise.
 
-- [~] 4. Difficulty level model variants
+- [ ] 4. Difficulty level model variants
   - [x] 4.1 Implement Level-2 mesh: shell rings around nucleus sphere
     - Procedurally generate ring geometry per element based on `electronShells`
     - _Requirements: 2.3_
@@ -68,7 +68,7 @@ Implement a browser-based single-page application featuring a 3D interactive per
     - Level 4–5 assets unloaded when Element_Viewer closes
     - _Requirements: 2.1, 2.6_
 
-- [~] 5. Classic Mode — Element Viewer
+- [ ] 5. Classic Mode — Element Viewer
   - [x] 5.1 Implement click handler on element meshes for Classic Mode
     - Register a pointer-down event on each element mesh that dispatches to the mode system; in Classic Mode, open the Element_Viewer
     - _Requirements: 3.1_
@@ -177,7 +177,7 @@ Implement a browser-based single-page application featuring a 3D interactive per
 - [x] 10. Checkpoint — Ensure Classic Mode, Trivia Mode UI, and Progression slice all pass tests
   - Ensure all tests pass, ask the user if questions arise.
 
-- [~] 11. Combat Engine — client-side
+- [ ] 11. Combat Engine — client-side
   - [x] 11.1 Implement `CombatEngine` as a pure function module
     - State machine: `Idle → EncounterInit → EncounterActive → PlayerTurn / ElementTurn → PlayerWin / PlayerDefeat`
     - `resolveTurn(state, action): TurnResult` — pure function, deterministic given seed

@@ -53,6 +53,12 @@ function writeSave(s: SavedState) {
 
 export default function App() {
   const saved = loadSave()
+
+  // Restore session on startup
+  const savedSession = (() => {
+    try { return JSON.parse(localStorage.getItem('pt3d_session') ?? 'null') } catch { return null }
+  })() as Account | null
+
   const [tab, setTab] = useState<Tab>('classic')
   const [selected, setSelected] = useState<ElementRecord | null>(null)
   const [search, setSearch] = useState('')
@@ -63,7 +69,7 @@ export default function App() {
   const [playerHp, setPlayerHp] = useState(100)
   const [playerHpMax] = useState(100)
   const [nameTags, setNameTags] = useState<{ symbol: string; name: string }[]>(saved?.nameTags ?? [])
-  const [account, setAccount] = useState<Account | null>(null)
+  const [account, setAccount] = useState<Account | null>(savedSession)
   const [rebirths, setRebirths] = useState(saved?.rebirths ?? 0)
   const [showConfetti, setShowConfetti] = useState(false)
   const [easterEgg, setEasterEgg] = useState<{ title: string; message: string } | null>(null)
@@ -260,9 +266,13 @@ export default function App() {
             loggedIn={account}
             onLogin={(acc, gifts) => {
               setAccount(acc)
+              localStorage.setItem('pt3d_session', JSON.stringify(acc))
               if (gifts.length > 0) setInventory(inv => [...inv, ...gifts])
             }}
-            onLogout={() => setAccount(null)}
+            onLogout={() => {
+              setAccount(null)
+              localStorage.removeItem('pt3d_session')
+            }}
             onRebirth={handleRebirth}
             onClose={() => setTab('classic')} />
         </div>

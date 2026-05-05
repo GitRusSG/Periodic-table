@@ -286,10 +286,9 @@ export default function App() {
                 const color = getColor(el)
                 const isSel = selected?.atomicNumber === el.atomicNumber
                 const isDim = search.trim() !== '' && !filtered.includes(el)
-                const hasEgg = checkEasterEgg(el.symbol) !== null && !discoveredEggs.includes(checkEasterEgg(el.symbol)!.id)
                 return (
                   <button key={el.atomicNumber}
-                    className={`cell${isSel ? ' selected' : ''}${isDim ? ' dimmed' : ''}${hasEgg && tab === 'classic' ? ' has-egg' : ''}`}
+                    className={`cell${isSel ? ' selected' : ''}${isDim ? ' dimmed' : ''}`}
                     style={{
                       left: col * CELL + 4, top: row * CELL + 4,
                       width: CELL - 4, height: CELL - 4,
@@ -301,7 +300,6 @@ export default function App() {
                     title={`${el.name} — ${el.classification.replace(/_/g, ' ')}`}>
                     <span className="cell-num">{el.atomicNumber}</span>
                     <span className="cell-sym">{el.symbol}</span>
-                    {hasEgg && tab === 'classic' && <span className="egg-dot">🥚</span>}
                   </button>
                 )
               })}

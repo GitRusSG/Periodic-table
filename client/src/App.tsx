@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import elementsData from './data/elements.json'
 import { computeElementWorldPosition } from './components/PeriodicTableGroup/elementPositions'
 import { CLASS_COLORS, ZONE_COLORS, type ElementRecord } from './types/game'
@@ -30,27 +30,54 @@ const maxRow = Math.max(...positions.map(p => p.row))
 
 type Tab = ActiveMode | 'inventory' | 'account' | 'forge'
 
+// ─── Persistence helpers ──────────────────────────────────────────────────────
+
+interface SavedState {
+  xp: number; gold: number; rebirths: number
+  inventory: LootItem[]
+  nameTags: { symbol: string; name: string }[]
+  discoveredEggs: string[]
+  atkBuff: number
+}
+
+function loadSave(): SavedState | null {
+  try {
+    const raw = localStorage.getItem('pt3d_save')
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
+function writeSave(s: SavedState) {
+  try { localStorage.setItem('pt3d_save', JSON.stringify(s)) } catch {}
+}
+
 export default function App() {
+  const saved = loadSave()
   const [tab, setTab] = useState<Tab>('classic')
   const [selected, setSelected] = useState<ElementRecord | null>(null)
   const [search, setSearch] = useState('')
-  const [xp, setXp] = useState(0)
-  const [gold, setGold] = useState(50)
-  const [inventory, setInventory] = useState<LootItem[]>([])
-  const [atkBuff, setAtkBuff] = useState(0)
+  const [xp, setXp] = useState(saved?.xp ?? 0)
+  const [gold, setGold] = useState(saved?.gold ?? 50)
+  const [inventory, setInventory] = useState<LootItem[]>(saved?.inventory ?? [])
+  const [atkBuff, setAtkBuff] = useState(saved?.atkBuff ?? 0)
   const [playerHp, setPlayerHp] = useState(100)
   const [playerHpMax] = useState(100)
-  const [nameTags, setNameTags] = useState<{ symbol: string; name: string }[]>([])
+  const [nameTags, setNameTags] = useState<{ symbol: string; name: string }[]>(saved?.nameTags ?? [])
   const [account, setAccount] = useState<Account | null>(null)
-  const [rebirths, setRebirths] = useState(0)
+  const [rebirths, setRebirths] = useState(saved?.rebirths ?? 0)
   const [showConfetti, setShowConfetti] = useState(false)
   const [easterEgg, setEasterEgg] = useState<{ title: string; message: string } | null>(null)
-  const [discoveredEggs, setDiscoveredEggs] = useState<string[]>([])
+  const [discoveredEggs, setDiscoveredEggs] = useState<string[]>(saved?.discoveredEggs ?? [])
 
   const addXP = (n: number) => setXp(x => x + n)
   const addGold = (n: number) => setGold(g => g + n)
   const spendGold = (n: number) => setGold(g => Math.max(0, g - n))
   const addLoot = (item: LootItem) => setInventory(inv => [...inv, item])
+
+  // Auto-save whenever key state changes
+  useEffect(() => {
+    writeSave({ xp, gold, rebirths, inventory, nameTags, discoveredEggs, atkBuff })
+  }, [xp, gold, rebirths, inventory, nameTags, discoveredEggs, atkBuff])
 
   const awardNameTag = (symbol: string, name: string) => {
     setNameTags(prev => prev.some(t => t.symbol === symbol) ? prev : [...prev, { symbol, name }])

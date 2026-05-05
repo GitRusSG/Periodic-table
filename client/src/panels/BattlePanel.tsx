@@ -6,7 +6,6 @@ import {
   type LootItem, type Combatant,
 } from '../gameData'
 import { ZONE_COLORS, RARITY_COLORS } from '../types/game'
-import { loadGlobalDifficulty } from './AdminPanel'
 import type { ElementRecord } from '../types/game'
 
 // Lightning flash component for boss fights
@@ -46,9 +45,17 @@ export function BattlePanel({ el, onClose, onXP, onGold, onLoot, onNameTag, equi
   const [enemy, setEnemy] = useState<Combatant>(() => {
     const e = buildEnemy(el)
     const rebirthScale = 1 + rebirths * 0.35
-    const adminScale = loadGlobalDifficulty()
+    // Read difficulty from localStorage safely — default to 1 if missing/invalid
+    const stored = parseFloat(localStorage.getItem('pt3d_difficulty_mult') ?? '1')
+    const adminScale = isNaN(stored) || stored <= 0 ? 1 : stored
     const total = rebirthScale * adminScale
-    return { ...e, hp: Math.round(e.hp * total), maxHp: Math.round(e.hp * total), atk: Math.round(e.atk * total), def: Math.round(e.def * total) }
+    return {
+      ...e,
+      hp: Math.round(e.hp * total),
+      maxHp: Math.round(e.hp * total),
+      atk: Math.max(1, Math.round(e.atk * total)),
+      def: Math.round(e.def * total),
+    }
   })
   const [phase, setPhase] = useState<'start' | 'battle' | 'won' | 'lost'>('start')
   const [log, setLog] = useState<string[]>([])
